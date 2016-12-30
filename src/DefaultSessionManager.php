@@ -20,7 +20,7 @@ class DefaultSessionManager implements SessionManagerInterface {
       throw new \Exception("Session must not be disabled to use it");
     }
 
-    if (!$_SESSION && $sessionConfiguration) {
+    if (!isset($_SESSION) && $sessionConfiguration) {
   		ini_set("session.cookie_lifetime", strval($sessionConfiguration->getCookieLifetime()));
   		ini_set("session.cookie_path", $sessionConfiguration->getCookiePath());
   		ini_set("session.cookie_domain", $sessionConfiguration->getCookieDomain());
@@ -56,7 +56,7 @@ class DefaultSessionManager implements SessionManagerInterface {
     if ($this->isSessionDisabled()) {
       throw new \Exception("Session must not be disabled to use it");
     }
-    if ($this->isSessionActive()) {
+    if ($this->isSessionInactive()) {
       $this->initSession();
     }
   }
@@ -65,7 +65,7 @@ class DefaultSessionManager implements SessionManagerInterface {
     if ($this->isSessionDisabled()) {
       throw new \Exception("Session must not be disabled to use it");
     }
-    if ($this->isSessionActive()) {
+    if ($this->isSessionInactive()) {
       $this->ensureSessionHasStart();
       $this->commit();
     }
