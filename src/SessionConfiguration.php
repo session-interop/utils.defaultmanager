@@ -15,8 +15,8 @@ class SessionConfiguration implements SessionConfigurationInterface {
     return $this->defaultSessionParams;
   }
 
-  public function getSessionHandler(): \SessionHandlerInterface {
-    return new \SessionHandler();
+  public function getSessionHandler(): ?\SessionHandlerInterface {
+    return null;
   }
 
   public function getCookieName(): string {

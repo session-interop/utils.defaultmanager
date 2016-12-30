@@ -11,20 +11,29 @@ class DefaultSessionManager implements SessionManagerInterface {
 
   private $configuration = null;
 
-  public function __construct(SessionConfigurationInterface $sessionConfiguration) {
-    if (isset($_SESSION)) {
-			throw new \Exception("This manager should not have any concurrency session management");
+  public function __construct(?SessionConfigurationInterface $sessionConfiguration) {
+    if ($this->isSessionActive()) {
+      return;
 		}
 
-    session_set_save_handler($sessionConfiguration->getSessionHandler(), false);
-		session_name($sessionConfiguration->getCookieName());
-    session_save_path($sessionConfiguration->getSavePath());
-		ini_set("session.cookie_lifetime", strval($sessionConfiguration->getCookieLifetime()));
-		ini_set("session.cookie_path", $sessionConfiguration->getCookiePath());
-		ini_set("session.cookie_domain", $sessionConfiguration->getCookieDomain());
-		ini_set("session.cookie_secure", strval($sessionConfiguration->isCookieOnlySecure()));
-		ini_set("session.cookie_httponly", strval($sessionConfiguration->isCookieHttpOnly()));
-		ini_set("session.gc_maxlifetime", strval($sessionConfiguration->getGcMaxLifeTime()));
+    if ($this->isSessionDisabled()) {
+      throw new \Exception("Session must not be disabled to use it");
+    }
+
+    if (!$_SESSION && $sessionConfiguration) {
+  		ini_set("session.cookie_lifetime", strval($sessionConfiguration->getCookieLifetime()));
+  		ini_set("session.cookie_path", $sessionConfiguration->getCookiePath());
+  		ini_set("session.cookie_domain", $sessionConfiguration->getCookieDomain());
+  		ini_set("session.cookie_secure", strval($sessionConfiguration->isCookieOnlySecure()));
+  		ini_set("session.cookie_httponly", strval($sessionConfiguration->isCookieHttpOnly()));
+  		ini_set("session.gc_maxlifetime", strval($sessionConfiguration->getGcMaxLifeTime()));
+      $sessionHandler = $sessionConfiguration->getSessionHandler();
+      if ($sessionHandler) {
+        session_set_save_handler($sessionHandler, false);
+      }
+      session_name($sessionConfiguration->getCookieName());
+      session_save_path($sessionConfiguration->getSavePath());
+    }
     $this->configuration = $sessionConfiguration;
   }
 
@@ -36,17 +45,26 @@ class DefaultSessionManager implements SessionManagerInterface {
   }
 
   public function clear(): void {
+    if ($this->isSessionDisabled()) {
+      throw new \Exception("Session must not be disabled to use it");
+    }
     session_unset();
     $this->ensureCommit();
   }
 
   public function ensureSessionHasStart(): void {
+    if ($this->isSessionDisabled()) {
+      throw new \Exception("Session must not be disabled to use it");
+    }
     if ($this->isSessionActive()) {
       $this->initSession();
     }
   }
 
   public function ensureCommit(): void {
+    if ($this->isSessionDisabled()) {
+      throw new \Exception("Session must not be disabled to use it");
+    }
     if ($this->isSessionActive()) {
       $this->ensureSessionHasStart();
       $this->commit();
@@ -60,13 +78,20 @@ class DefaultSessionManager implements SessionManagerInterface {
   public function close(): void {
     session_abort();
   }
+  public function isSessionDisabled(): bool {
+    return session_status() === PHP_SESSION_DISABLED;
+  }
 
   public function isSessionActive(): bool {
-    return session_status() === PHP_SESSION_NONE;
+    return !$this->isSessionInactive();
+  }
+
+  public function isSessionInactive(): bool {
+
+      return session_status() === PHP_SESSION_NONE;
   }
 
   public function __destroy() {
-    //$this->silentCommit();
   }
 
 
