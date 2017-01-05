@@ -1,0 +1,3 @@
+{
+  "Interop\\Container\\ServiceProvider": "Interop\\Session\\Manager\\Utils\\DefaultManager\\DefaultSessionManagerServiceProvider"
+}
